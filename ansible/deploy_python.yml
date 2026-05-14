@@ -1,0 +1,35 @@
+---
+- name: Deploy Python DB scanner to Windows SQL servers
+  hosts: windows_sql
+  gather_facts: false
+
+  tasks:
+    - name: Create scanner directories
+      ansible.windows.win_file:
+        path: "{{ item }}"
+        state: directory
+      loop:
+        - "{{ scanner_root }}"
+        - "{{ scanner_root }}\\scanner"
+        - "{{ scanner_report_dir }}"
+
+    - name: Copy main scanner script
+      ansible.windows.win_copy:
+        src: ../db_scan.py
+        dest: "{{ scanner_root }}\\db_scan.py"
+
+    - name: Copy scanner modules
+      ansible.windows.win_copy:
+        src: ../scanner/
+        dest: "{{ scanner_root }}\\scanner\\"
+
+    - name: Copy Python requirements
+      ansible.windows.win_copy:
+        src: ../requirements.txt
+        dest: "{{ scanner_root }}\\requirements.txt"
+
+    - name: Install Python dependencies
+      ansible.windows.win_command: >-
+        {{ scanner_python }} {{ scanner_python_args }} -m pip install -r {{ scanner_root }}\\requirements.txt
+      args:
+        chdir: "{{ scanner_root }}"

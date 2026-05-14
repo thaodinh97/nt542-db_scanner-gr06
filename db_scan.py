@@ -1,4 +1,6 @@
 import json
+import os
+
 import pyodbc
 
 from scanner import (
@@ -14,17 +16,33 @@ from scanner import (
 # ==============================================================================
 # HAM MAIN: KET NOI VA GOI CAC MODULES
 # ==============================================================================
-def run_full_automated_scan():
-    # Chuỗi kết nối ODBC đã được chuyển đổi từ cấu hình SSMS của bạn
-    conn_str = (
-        r'DRIVER={ODBC Driver 17 for SQL Server};'
-        r'SERVER=localhost\SQLEXPRESS01;'
-        r'DATABASE=master;'
-        r'Trusted_Connection=yes;'          # Tương đương Integrated Security=True
-        r'Encrypt=yes;'                     # Tương đương Encrypt=True
-        r'TrustServerCertificate=yes;'      # Tương đương TrustServerCertificate=True
-        r'Timeout=0;'                       # Tương đương Command Timeout=0
+def build_connection_string():
+    """Build SQL Server ODBC connection string from environment variables."""
+    explicit_conn_str = os.getenv("DB_SCANNER_CONN_STR")
+    if explicit_conn_str:
+        return explicit_conn_str
+
+    driver = os.getenv("DB_SCANNER_ODBC_DRIVER", "ODBC Driver 17 for SQL Server")
+    server = os.getenv("DB_SCANNER_SQL_INSTANCE", r"localhost\SQLEXPRESS01")
+    database = os.getenv("DB_SCANNER_SQL_DATABASE", "master")
+    trusted_connection = os.getenv("DB_SCANNER_TRUSTED_CONNECTION", "yes")
+    encrypt = os.getenv("DB_SCANNER_ENCRYPT", "yes")
+    trust_server_certificate = os.getenv("DB_SCANNER_TRUST_SERVER_CERTIFICATE", "yes")
+    timeout = os.getenv("DB_SCANNER_TIMEOUT", "0")
+
+    return (
+        f"DRIVER={{{driver}}};"
+        f"SERVER={server};"
+        f"DATABASE={database};"
+        f"Trusted_Connection={trusted_connection};"
+        f"Encrypt={encrypt};"
+        f"TrustServerCertificate={trust_server_certificate};"
+        f"Timeout={timeout};"
     )
+
+
+def run_full_automated_scan():
+    conn_str = build_connection_string()
 
     final_report = []
 

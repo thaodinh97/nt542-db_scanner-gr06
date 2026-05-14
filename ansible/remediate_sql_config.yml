@@ -1,0 +1,26 @@
+---
+- name: Toggle SQL Server configuration on Windows SQL servers
+  hosts: windows_sql
+  gather_facts: false
+
+  tasks:
+    - name: Apply SQL Server configuration remediation
+      ansible.windows.win_shell: |
+        $configName = @'
+        {{ sql_remediation_config_name }}
+        '@.Trim()
+        $configValue = [int]{{ sql_remediation_config_value }}
+        $query = @"
+        EXEC sp_configure 'show advanced options', 1;
+        RECONFIGURE;
+        EXEC sp_configure '$configName', $configValue;
+        RECONFIGURE;
+        EXEC sp_configure '$configName';
+        "@
+        {{ sqlcmd_executable }} -S "{{ scanner_sql_instance }}" -d "{{ scanner_sql_database }}" -E -b -Q $query
+      register: remediation_result
+      changed_when: true
+
+    - name: Show remediation result
+      ansible.builtin.debug:
+        var: remediation_result.stdout_lines

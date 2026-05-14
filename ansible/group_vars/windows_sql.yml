@@ -1,0 +1,18 @@
+---
+# Một bộ biến duy nhất dùng cho toàn bộ Windows SQL managed nodes.
+scanner_root: C:\db_scanner
+scanner_report_dir: C:\db_scanner\reports
+scanner_python: py
+scanner_python_args: "-3"
+scanner_sql_instance: "localhost\\SQLEXPRESS01"
+scanner_sql_database: master
+scanner_odbc_driver: "ODBC Driver 17 for SQL Server"
+scanner_trusted_connection: true
+scanner_encrypt: true
+scanner_trust_server_certificate: true
+scanner_timeout: 0
+
+# Biến dùng cho playbook remediation. Có thể override khi chạy bằng -e.
+sqlcmd_executable: sqlcmd
+sql_remediation_config_name: "xp_cmdshell"
+sql_remediation_config_value: 0

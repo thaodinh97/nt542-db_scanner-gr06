@@ -1,0 +1,9 @@
+---
+- name: Deploy scanner
+  ansible.builtin.import_playbook: deploy_python.yml
+
+- name: Run audit
+  ansible.builtin.import_playbook: run_audit.yml
+
+- name: Collect reports
+  ansible.builtin.import_playbook: collect_reports.yml
