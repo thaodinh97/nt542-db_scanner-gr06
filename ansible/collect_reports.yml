@@ -1,0 +1,25 @@
+---
+- name: Collect audit reports from Windows SQL servers
+  hosts: windows_sql
+  gather_facts: false
+
+  tasks:
+    - name: Find JSON audit reports on managed node
+      ansible.windows.win_find:
+        paths: "{{ scanner_report_dir }}"
+        patterns: "audit-*.json"
+      register: audit_reports
+
+    - name: Create local host report directory on control node
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/reports/{{ inventory_hostname }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+
+    - name: Fetch reports to Ubuntu control node
+      ansible.builtin.fetch:
+        src: "{{ item.path }}"
+        dest: "{{ playbook_dir }}/reports/{{ inventory_hostname }}/"
+        flat: true
+      loop: "{{ audit_reports.files }}"

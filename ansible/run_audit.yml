@@ -1,0 +1,32 @@
+---
+- name: Run DB audit on all Windows SQL servers
+  hosts: windows_sql
+  gather_facts: false
+
+  tasks:
+    - name: Ensure report directory exists
+      ansible.windows.win_file:
+        path: "{{ scanner_report_dir }}"
+        state: directory
+
+    - name: Run scanner and write JSON report
+      ansible.windows.win_shell: |
+        $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $reportPath = "{{ scanner_report_dir }}\\audit-$env:COMPUTERNAME-$timestamp.json"
+        $env:DB_SCANNER_SQL_INSTANCE = '{{ scanner_sql_instance }}'
+        $env:DB_SCANNER_SQL_DATABASE = '{{ scanner_sql_database }}'
+        $env:DB_SCANNER_ODBC_DRIVER = '{{ scanner_odbc_driver }}'
+        $env:DB_SCANNER_TRUSTED_CONNECTION = '{{ scanner_trusted_connection | ternary("yes", "no") }}'
+        $env:DB_SCANNER_ENCRYPT = '{{ scanner_encrypt | ternary("yes", "no") }}'
+        $env:DB_SCANNER_TRUST_SERVER_CERTIFICATE = '{{ scanner_trust_server_certificate | ternary("yes", "no") }}'
+        $env:DB_SCANNER_TIMEOUT = '{{ scanner_timeout }}'
+        {{ scanner_python }} {{ scanner_python_args }} "{{ scanner_root }}\\db_scan.py" | Out-File -FilePath $reportPath -Encoding utf8
+        Write-Output $reportPath
+      args:
+        chdir: "{{ scanner_root }}"
+      register: audit_run
+      changed_when: true
+
+    - name: Show report path on managed node
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} report: {{ audit_run.stdout | trim }}"
